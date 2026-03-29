@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Subscriber;
+use App\Services\Status\ServiceCheckRunner;
 use App\Services\Status\StatusPageService;
 use Livewire\Volt\Component;
 
@@ -18,6 +19,13 @@ new class extends Component {
         ];
     }
 
+    public function mount(): void
+    {
+        if (app()->isLocal()) {
+            app(ServiceCheckRunner::class)->runDueChecks();
+        }
+    }
+
     public function setTab(string $tab): void
     {
         if (array_key_exists($tab, $this->getTabsProperty())) {
@@ -32,7 +40,9 @@ new class extends Component {
 
     public function refreshSnapshot(): void
     {
-        //
+        if (app()->isLocal()) {
+            app(ServiceCheckRunner::class)->runDueChecks();
+        }
     }
 
     public function subscribe(): void

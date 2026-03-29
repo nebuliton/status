@@ -9,7 +9,6 @@ PHP_HOST="${PHP_HOST:-127.0.0.1}"
 PHP_PORT="${PHP_PORT:-8000}"
 VITE_HOST="${VITE_HOST:-127.0.0.1}"
 OPEN_BROWSER="${OPEN_BROWSER:-0}"
-START_SCHEDULER="${START_SCHEDULER:-0}"
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -52,9 +51,7 @@ printf "======================\n"
 printf "%-14s %s\n" "Projekt" "$PROJECT_ROOT"
 printf "%-14s %s\n" "Laravel" "http://$PHP_HOST:$PHP_PORT"
 printf "%-14s %s\n" "Vite" "http://$VITE_HOST:5173"
-if [[ "$START_SCHEDULER" == "1" ]]; then
-  printf "%-14s %s\n" "Scheduler" "aktiv"
-fi
+printf "%-14s %s\n" "Scheduler" "aktiv"
 printf "\n"
 
 cd "$PROJECT_ROOT"
@@ -65,10 +62,8 @@ PHP_PID=$!
 npm run dev -- --host "$VITE_HOST" &
 VITE_PID=$!
 
-if [[ "$START_SCHEDULER" == "1" ]]; then
-  php artisan schedule:work &
-  SCHEDULER_PID=$!
-fi
+php artisan schedule:work &
+SCHEDULER_PID=$!
 
 if [[ "$OPEN_BROWSER" == "1" ]]; then
   if command -v xdg-open >/dev/null 2>&1; then

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Services;
 
 use App\Enums\ServiceCheckType;
+use App\Enums\ServiceIconSource;
 use App\Enums\ServiceStatus;
 use App\Filament\Resources\Services\Pages\ManageServices;
 use App\Models\Service;
@@ -13,6 +14,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -83,6 +85,31 @@ class ServiceResource extends Resource
                     ->default(ServiceCheckType::Website->value)
                     ->required()
                     ->live(),
+                Select::make('icon_source')
+                    ->label('Icon-Quelle')
+                    ->options(self::iconSourceOptions())
+                    ->default(ServiceIconSource::Auto->value)
+                    ->required()
+                    ->live()
+                    ->helperText(fn (Get $get): string => ServiceIconSource::tryFrom((string) $get('icon_source'))?->description() ?? ServiceIconSource::Auto->description()),
+                Select::make('icon_name')
+                    ->label('Symbol')
+                    ->options(self::serviceIconOptions())
+                    ->visible(fn (Get $get): bool => $get('icon_source') === ServiceIconSource::Icon->value)
+                    ->required(fn (Get $get): bool => $get('icon_source') === ServiceIconSource::Icon->value)
+                    ->searchable(),
+                FileUpload::make('icon_path')
+                    ->label('Eigenes Bild')
+                    ->disk('public')
+                    ->directory('service-icons')
+                    ->visibility('public')
+                    ->image()
+                    ->imageEditor()
+                    ->maxSize(2048)
+                    ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp'])
+                    ->visible(fn (Get $get): bool => $get('icon_source') === ServiceIconSource::Upload->value)
+                    ->required(fn (Get $get): bool => $get('icon_source') === ServiceIconSource::Upload->value)
+                    ->helperText('Wenn kein Bild gesetzt ist, wird automatisch auf das Standard-Icon zurückgefallen.'),
                 TextInput::make('check_interval_seconds')
                     ->label('Prüfintervall in Sekunden')
                     ->numeric()
@@ -202,6 +229,11 @@ class ServiceResource extends Resource
                     ->badge()
                     ->formatStateUsing(fn (ServiceCheckType|string|null $state): string => $state instanceof ServiceCheckType ? $state->label() : ServiceCheckType::tryFrom((string) $state)?->label() ?? 'Unbekannt')
                     ->sortable(),
+                TextColumn::make('icon_source')
+                    ->label('Icon')
+                    ->badge()
+                    ->formatStateUsing(fn (ServiceIconSource|string|null $state): string => $state instanceof ServiceIconSource ? $state->label() : ServiceIconSource::tryFrom((string) $state)?->label() ?? 'Automatisch')
+                    ->sortable(),
                 TextColumn::make('monitor_target')
                     ->label('Ziel')
                     ->getStateUsing(fn (Service $record): string => $record->monitorTarget())
@@ -276,6 +308,36 @@ class ServiceResource extends Resource
         return collect(ServiceCheckType::cases())
             ->mapWithKeys(fn (ServiceCheckType $type) => [$type->value => $type->label()])
             ->all();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected static function iconSourceOptions(): array
+    {
+        return collect(ServiceIconSource::cases())
+            ->mapWithKeys(fn (ServiceIconSource $source) => [$source->value => $source->label()])
+            ->all();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected static function serviceIconOptions(): array
+    {
+        return [
+            'browser' => 'Browser',
+            'server' => 'Server',
+            'cloud' => 'Cloud',
+            'database' => 'Datenbank',
+            'signal' => 'Signal',
+            'plug' => 'Stecker',
+            'shield' => 'Schild',
+            'bolt' => 'Blitz',
+            'cube' => 'Würfel',
+            'credit-card' => 'Karte',
+            'activity' => 'Aktivität',
+        ];
     }
 
     /**

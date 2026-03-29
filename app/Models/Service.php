@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ServiceCheckType;
+use App\Enums\ServiceIconSource;
 use App\Enums\ServiceStatus;
 use App\Services\Status\UptimeCalculator;
 use Carbon\CarbonInterface;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 #[Fillable([
@@ -21,6 +23,9 @@ use Illuminate\Support\Str;
     'uptime_percentage',
     'group_id',
     'check_type',
+    'icon_source',
+    'icon_name',
+    'icon_path',
     'check_enabled',
     'check_interval_seconds',
     'timeout_seconds',
@@ -59,6 +64,10 @@ class Service extends Model
             if (blank($service->check_type)) {
                 $service->check_type = ServiceCheckType::Website;
             }
+
+            if (blank($service->icon_source)) {
+                $service->icon_source = ServiceIconSource::Auto;
+            }
         });
 
         static::updating(function (self $service): void {
@@ -76,6 +85,7 @@ class Service extends Model
         return [
             'status' => ServiceStatus::class,
             'check_type' => ServiceCheckType::class,
+            'icon_source' => ServiceIconSource::class,
             'check_enabled' => 'boolean',
             'check_interval_seconds' => 'integer',
             'timeout_seconds' => 'integer',
@@ -145,6 +155,78 @@ class Service extends Model
                 $this->database_name,
             ])->filter()->whenEmpty(fn ($collection) => $collection->push('Datenbank-Konfiguration fehlt'))->join(' · '),
         };
+    }
+
+    /**
+     * @return array{type: string, value: string, fallback: string}
+     */
+    public function resolvedIcon(): array
+    {
+        $fallback = $this->defaultIconName();
+        $source = $this->icon_source ?? ServiceIconSource::Auto;
+
+        if (
+            ($source === ServiceIconSource::Upload)
+            && filled($this->icon_path)
+            && Storage::disk('public')->exists($this->icon_path)
+        ) {
+            return [
+                'type' => 'image',
+                'value' => Storage::disk('public')->url($this->icon_path),
+                'fallback' => $fallback,
+            ];
+        }
+
+        if (($source === ServiceIconSource::Icon) && filled($this->icon_name)) {
+            return [
+                'type' => 'icon',
+                'value' => $this->icon_name,
+                'fallback' => $fallback,
+            ];
+        }
+
+        if (($this->check_type === ServiceCheckType::Website) && filled($favicon = $this->faviconUrl())) {
+            return [
+                'type' => 'image',
+                'value' => $favicon,
+                'fallback' => $fallback,
+            ];
+        }
+
+        return [
+            'type' => 'icon',
+            'value' => $fallback,
+            'fallback' => $fallback,
+        ];
+    }
+
+    public function defaultIconName(): string
+    {
+        return match ($this->check_type ?? ServiceCheckType::Website) {
+            ServiceCheckType::Website => 'browser',
+            ServiceCheckType::Tcp => 'server',
+            ServiceCheckType::Ping => 'signal',
+            ServiceCheckType::Database => 'database',
+        };
+    }
+
+    public function faviconUrl(): ?string
+    {
+        if (($this->check_type !== ServiceCheckType::Website) || blank($this->target_url)) {
+            return null;
+        }
+
+        $parts = parse_url($this->target_url);
+
+        if (($parts === false) || blank($parts['host'] ?? null)) {
+            return null;
+        }
+
+        $scheme = $parts['scheme'] ?? 'https';
+        $host = $parts['host'];
+        $port = isset($parts['port']) ? ':'.$parts['port'] : '';
+
+        return "{$scheme}://{$host}{$port}/favicon.ico";
     }
 
     protected static function generateUniqueSlug(string $name, ?int $ignoreId = null): string

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\ServiceCheckType;
+use App\Enums\ServiceIconSource;
 use App\Enums\ServiceStatus;
 use App\Models\Service;
 use App\Models\ServiceGroup;
@@ -30,6 +31,7 @@ class ServiceFactory extends Factory
             'uptime_percentage' => fake()->randomFloat(2, 96, 100),
             'group_id' => ServiceGroup::factory(),
             'check_type' => ServiceCheckType::Website,
+            'icon_source' => ServiceIconSource::Auto,
             'check_enabled' => false,
             'check_interval_seconds' => 60,
             'timeout_seconds' => 5,

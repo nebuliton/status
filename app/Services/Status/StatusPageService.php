@@ -54,6 +54,7 @@ class StatusPageService
                             'check_type' => $service->check_type,
                             'check_enabled' => $service->check_enabled,
                             'target' => $service->monitorTarget(),
+                            'icon' => $service->resolvedIcon(),
                             'last_checked_at' => $service->last_checked_at,
                             'last_response_time_ms' => $service->last_response_time_ms,
                             'last_check_message' => $service->last_check_message,

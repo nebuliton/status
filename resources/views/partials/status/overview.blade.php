@@ -45,9 +45,10 @@
                         <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                             <div class="min-w-0 flex-1">
                                 <div class="flex flex-wrap items-center gap-3">
-                                    <div class="status-icon-shell h-10 w-10 rounded-2xl bg-white text-slate-500">
-                                        @include('partials.status.icon', ['name' => $service['check_type']?->icon() ?? 'activity', 'class' => 'h-4 w-4'])
-                                    </div>
+                                    @include('partials.status.service-icon', [
+                                        'icon' => $service['icon'],
+                                        'class' => 'h-10 w-10 rounded-2xl bg-white text-slate-500',
+                                    ])
 
                                     <div class="min-w-0">
                                         <div class="flex flex-wrap items-center gap-3">

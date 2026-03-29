@@ -86,6 +86,54 @@
         </svg>
         @break
 
+    @case('browser')
+        <svg {{ $attributes->merge(['class' => $class]) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ $strokeWidth }}" aria-hidden="true">
+            <rect x="3.5" y="5" width="17" height="14" rx="2.5"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.5 9h17M7 7h.01M10 7h.01"/>
+        </svg>
+        @break
+
+    @case('server')
+        <svg {{ $attributes->merge(['class' => $class]) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ $strokeWidth }}" aria-hidden="true">
+            <rect x="4" y="4.5" width="16" height="6" rx="2"/>
+            <rect x="4" y="13.5" width="16" height="6" rx="2"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7.5h.01M8 16.5h.01M12 7.5h4M12 16.5h4"/>
+        </svg>
+        @break
+
+    @case('cloud')
+        <svg {{ $attributes->merge(['class' => $class]) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ $strokeWidth }}" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 18h8a4 4 0 00.6-8 5.5 5.5 0 00-10.5-1.5A3.5 3.5 0 008 18z"/>
+        </svg>
+        @break
+
+    @case('shield')
+        <svg {{ $attributes->merge(['class' => $class]) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ $strokeWidth }}" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4l6 2.5V11c0 4.3-2.5 7.2-6 9-3.5-1.8-6-4.7-6-9V6.5L12 4z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.5 12.5l1.6 1.6 3.4-3.6"/>
+        </svg>
+        @break
+
+    @case('bolt')
+        <svg {{ $attributes->merge(['class' => $class]) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ $strokeWidth }}" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 2L5 13h5l-1 9 8-11h-5l1-9z"/>
+        </svg>
+        @break
+
+    @case('cube')
+        <svg {{ $attributes->merge(['class' => $class]) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ $strokeWidth }}" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l7 4v10l-7 4-7-4V7l7-4z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M5 7l7 4 7-4"/>
+        </svg>
+        @break
+
+    @case('credit-card')
+        <svg {{ $attributes->merge(['class' => $class]) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ $strokeWidth }}" aria-hidden="true">
+            <rect x="3" y="6" width="18" height="12" rx="2.5"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 14h4"/>
+        </svg>
+        @break
+
     @case('clock')
         <svg {{ $attributes->merge(['class' => $class]) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ $strokeWidth }}" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 20a8 8 0 100-16 8 8 0 000 16zm0-11v4l2.5 1.5"/>

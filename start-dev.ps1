@@ -3,8 +3,7 @@ param(
     [string]$PhpHost = "127.0.0.1",
     [int]$PhpPort = 8000,
     [string]$ViteHost = "127.0.0.1",
-    [switch]$Browser,
-    [switch]$Scheduler
+    [switch]$Browser
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,9 +43,7 @@ Write-Host "======================" -ForegroundColor DarkCyan
 Write-Block -Title "Projekt" -Value $projectRoot
 Write-Block -Title "Laravel" -Value "http://$PhpHost`:$PhpPort" -Color Green
 Write-Block -Title "Vite" -Value "http://$ViteHost`:5173" -Color Yellow
-if ($Scheduler.IsPresent) {
-    Write-Block -Title "Scheduler" -Value "aktiv" -Color Cyan
-}
+Write-Block -Title "Scheduler" -Value "aktiv" -Color Cyan
 Write-Host ""
 
 $serverCommand = "& { `$Host.UI.RawUI.WindowTitle = 'Nebuliton • Laravel Server'; Set-Location -LiteralPath '$escapedProjectRoot'; php artisan serve --host=$PhpHost --port=$PhpPort }"
@@ -67,20 +64,18 @@ $viteProcess = Start-Process -FilePath $shellPath -WorkingDirectory $projectRoot
     $viteCommand
 ) -PassThru
 
-if ($Scheduler.IsPresent) {
-    Start-Sleep -Milliseconds 300
+Start-Sleep -Milliseconds 300
 
-    $schedulerProcess = Start-Process -FilePath $shellPath -WorkingDirectory $projectRoot -ArgumentList @(
-        "-NoExit",
-        "-Command",
-        $schedulerCommand
-    ) -PassThru
-}
+$schedulerProcess = Start-Process -FilePath $shellPath -WorkingDirectory $projectRoot -ArgumentList @(
+    "-NoExit",
+    "-Command",
+    $schedulerCommand
+) -PassThru
 
 Write-Host "Gestartet" -ForegroundColor Green
 Write-Block -Title "Server PID" -Value $serverProcess.Id
 Write-Block -Title "Vite PID" -Value $viteProcess.Id
-if ($Scheduler.IsPresent -and $schedulerProcess) {
+if ($schedulerProcess) {
     Write-Block -Title "Scheduler PID" -Value $schedulerProcess.Id
 }
 Write-Host ""

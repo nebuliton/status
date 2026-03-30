@@ -159,6 +159,22 @@
         @apply cursor-help;
     }
 
+    .status-history-tooltip {
+        @apply pointer-events-none absolute bottom-full z-20 mb-2 hidden max-w-[12rem] rounded-xl bg-slate-950 px-3 py-2 text-center text-[11px] leading-4 text-white shadow-xl group-hover:block group-focus-within:block;
+    }
+
+    .status-history-tooltip-left {
+        @apply left-0;
+    }
+
+    .status-history-tooltip-center {
+        @apply left-1/2 -translate-x-1/2;
+    }
+
+    .status-history-tooltip-right {
+        @apply right-0;
+    }
+
     .status-share-toast {
         @apply fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-slate-900 bg-slate-950 px-4 py-2 text-sm font-medium text-white shadow-xl opacity-0 transition;
     }

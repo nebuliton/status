@@ -121,17 +121,27 @@
                                 <span>{{ $service['history'][0]['date']->translatedFormat('d. M') }} bis {{ last($service['history'])['date']->translatedFormat('d. M') }}</span>
                             </div>
 
+                            @php($historyCount = count($service['history']))
                             <div class="flex gap-[3px]">
                                 @foreach ($service['history'] as $day)
                                     @php($dayStatus = $day['status'])
+                                    @php($tooltipPosition = $loop->index <= 1 ? 'left' : ($loop->index >= $historyCount - 2 ? 'right' : 'center'))
 
                                     <div
                                         @class([
                                             'status-history-segment group relative h-7 flex-1 min-w-[4px] rounded-sm',
                                             $dayStatus?->segmentClasses() ?? 'bg-slate-200/80',
                                         ])
+                                        title="{{ $day['date']->translatedFormat('d. M Y') }} · {{ $dayStatus?->label() ?? 'Keine Daten' }}"
                                     >
-                                        <div class="pointer-events-none absolute -top-12 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-xl bg-slate-950 px-3 py-2 text-xs text-white shadow-lg group-hover:block">
+                                        <div
+                                            @class([
+                                                'status-history-tooltip',
+                                                'status-history-tooltip-left' => $tooltipPosition === 'left',
+                                                'status-history-tooltip-center' => $tooltipPosition === 'center',
+                                                'status-history-tooltip-right' => $tooltipPosition === 'right',
+                                            ])
+                                        >
                                             {{ $day['date']->translatedFormat('d. M Y') }} · {{ $dayStatus?->label() ?? 'Keine Daten' }}
                                         </div>
                                     </div>

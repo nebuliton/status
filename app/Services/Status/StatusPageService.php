@@ -13,6 +13,7 @@ use App\Models\ServiceGroup;
 use App\Models\UptimeLog;
 use Carbon\CarbonInterface;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -66,25 +67,12 @@ class StatusPageService
                     'id' => $group->id,
                     'name' => $group->name,
                     'services' => $group->services->map(
-                        fn (Service $service) => [
-                            'id' => $service->id,
-                            'name' => $service->name,
-                            'slug' => $service->slug,
-                            'status' => $service->status,
-                            'check_type' => $service->check_type,
-                            'check_enabled' => $service->check_enabled,
-                            'target' => $service->monitorTarget(),
-                            'icon' => $service->resolvedIcon(),
-                            'last_checked_at' => $service->last_checked_at,
-                            'last_response_time_ms' => $service->last_response_time_ms,
-                            'last_check_message' => $service->last_check_message,
-                            'uptime_percentage' => (float) $service->uptime_percentage,
-                            'history' => $this->historyForService(
-                                $historyLogs->get($service->id, collect()),
-                                $windowStart,
-                                $days,
-                            ),
-                        ],
+                        fn (Service $service) => $this->servicePayload(
+                            $service,
+                            $historyLogs->get($service->id, collect()),
+                            $windowStart,
+                            $days,
+                        ),
                     ),
                 ],
             ),
@@ -97,6 +85,65 @@ class StatusPageService
                 'completed' => $completedMaintenances,
             ],
             'announcements' => $announcements,
+        ];
+    }
+
+    public function serviceSnapshot(Service $service, int $days = 90): array
+    {
+        $service->loadMissing('group');
+
+        $windowStart = now()->subDays($days - 1)->startOfDay();
+        $historyLogs = $this->dailyHistoryLogs(collect([$service]), $windowStart)->get($service->id, collect());
+        $payload = $this->servicePayload($service, $historyLogs, $windowStart, $days);
+        $lastUpdatedAt = $service->last_checked_at instanceof CarbonInterface
+            ? CarbonImmutable::instance($service->last_checked_at)
+            : null;
+
+        return [
+            'days' => $days,
+            'generatedAt' => now(),
+            'lastUpdatedAt' => $lastUpdatedAt,
+            'lastUpdatedLabel' => $this->lastUpdatedLabel($lastUpdatedAt),
+            'service' => $payload,
+            'description' => $this->serviceShareDescription($payload),
+            'shareHash' => sha1(json_encode([
+                'status' => $service->status->value,
+                'uptime' => $payload['uptime_percentage'],
+                'last_checked_at' => $service->last_checked_at?->toIso8601String(),
+                'last_check_message' => $service->last_check_message,
+            ])),
+        ];
+    }
+
+    public function overviewShareSnapshot(int $days = 90, int $limit = 8): array
+    {
+        $snapshot = $this->snapshot($days);
+        $services = collect($snapshot['groups'])
+            ->pluck('services')
+            ->flatten(1)
+            ->sortByDesc(fn (array $service) => $service['status']->severity())
+            ->values();
+
+        return [
+            'days' => $snapshot['days'],
+            'generatedAt' => $snapshot['generatedAt'],
+            'lastUpdatedAt' => $snapshot['lastUpdatedAt'],
+            'lastUpdatedLabel' => $snapshot['lastUpdatedLabel'],
+            'globalStatus' => $snapshot['globalStatus'],
+            'globalMessage' => $snapshot['globalMessage'],
+            'statusBreakdown' => $snapshot['statusBreakdown'],
+            'averageUptime' => $snapshot['averageUptime'],
+            'services' => $services->take($limit)->values()->all(),
+            'serviceCount' => $services->count(),
+            'shareHash' => sha1(json_encode([
+                'global_status' => $snapshot['globalStatus']->value,
+                'last_updated_at' => $snapshot['lastUpdatedAt']?->toIso8601String(),
+                'services' => $services->map(fn (array $service) => [
+                    'slug' => Arr::get($service, 'slug'),
+                    'status' => Arr::get($service, 'status')?->value,
+                    'uptime' => Arr::get($service, 'uptime_percentage'),
+                ])->all(),
+            ])),
         ];
     }
 
@@ -119,6 +166,16 @@ class StatusPageService
             ->map(fn (CarbonInterface $timestamp): CarbonImmutable => CarbonImmutable::instance($timestamp))
             ->sortDesc()
             ->first();
+    }
+
+    protected function serviceShareDescription(array $service): string
+    {
+        $statusLabel = $service['status']->label();
+        $uptime = number_format((float) $service['uptime_percentage'], 2, ',', '.');
+        $message = trim((string) ($service['last_check_message'] ?: $service['status']->description()));
+        $message = mb_strimwidth($message, 0, 140, '…');
+
+        return "{$service['name']} ist aktuell {$statusLabel}. Verfügbarkeit {$uptime} %. {$message}";
     }
 
     protected function lastUpdatedLabel(?CarbonImmutable $lastUpdatedAt): string
@@ -246,5 +303,29 @@ class StatusPageService
             )
             ->orderByDesc('scheduled_at')
             ->get();
+    }
+
+    protected function servicePayload(
+        Service $service,
+        Collection $historyLogs,
+        CarbonImmutable $windowStart,
+        int $days,
+    ): array {
+        return [
+            'id' => $service->id,
+            'name' => $service->name,
+            'slug' => $service->slug,
+            'group_name' => $service->group?->name,
+            'status' => $service->status,
+            'check_type' => $service->check_type,
+            'check_enabled' => $service->check_enabled,
+            'target' => $service->monitorTarget(),
+            'icon' => $service->resolvedIcon(),
+            'last_checked_at' => $service->last_checked_at,
+            'last_response_time_ms' => $service->last_response_time_ms,
+            'last_check_message' => $service->last_check_message,
+            'uptime_percentage' => (float) $service->uptime_percentage,
+            'history' => $this->historyForService($historyLogs, $windowStart, $days),
+        ];
     }
 }

@@ -44,7 +44,7 @@
 
     @case('maintenance')
         <svg {{ $attributes->merge(['class' => $class]) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ $strokeWidth }}" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M14.5 6.5l3 3m-9 9l-3-3m10-9l-7 7m-1.6-7.9a3 3 0 01-4.1 4.1l2.2-2.2L3 5.5l2.2-2.2 2.1 2.1 2.2-2.2a3 3 0 014.1 4.1z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.5 6.5a3.5 3.5 0 00-4.95 4.95L4.6 16.4a2.12 2.12 0 103 3l4.95-4.95a3.5 3.5 0 004.95-4.95l-2.36 2.36-2.95-2.95 2.36-2.41z"/>
         </svg>
         @break
 
@@ -155,6 +155,22 @@
     @case('arrow-up-right')
         <svg {{ $attributes->merge(['class' => $class]) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ $strokeWidth }}" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M8 16L16 8m-5 0h5v5"/>
+        </svg>
+        @break
+
+    @case('share')
+        <svg {{ $attributes->merge(['class' => $class]) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ $strokeWidth }}" aria-hidden="true">
+            <circle cx="18" cy="5" r="3"/>
+            <circle cx="6" cy="12" r="3"/>
+            <circle cx="18" cy="19" r="3"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.7 10.9l6.6-3.8M8.7 13.1l6.6 3.8"/>
+        </svg>
+        @break
+
+    @case('image')
+        <svg {{ $attributes->merge(['class' => $class]) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ $strokeWidth }}" aria-hidden="true">
+            <rect x="3.5" y="5" width="17" height="14" rx="2.5"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 14l3-3 2.5 2.5L16.5 10l4 5M8 9.5h.01"/>
         </svg>
         @break
 

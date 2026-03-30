@@ -52,11 +52,21 @@
 
                                     <div class="min-w-0">
                                         <div class="flex flex-wrap items-center gap-3">
-                                            <h3 class="truncate text-base font-semibold text-slate-950">{{ $service['name'] }}</h3>
+                                            <a href="{{ route('status.service.show', ['service' => $service['slug']]) }}" class="truncate text-base font-semibold text-slate-950 transition hover:text-brand-600">
+                                                {{ $service['name'] }}
+                                            </a>
                                             <span class="status-pill {{ $service['status']->badgeClasses() }}">
                                                 <span class="h-2 w-2 rounded-full bg-current"></span>
                                                 {{ $service['status']->label() }}
                                             </span>
+                                            <button
+                                                type="button"
+                                                class="status-share-button status-share-button-compact"
+                                                onclick="window.nebulitonShareLink('{{ route('status.service.show', ['service' => $service['slug']]) }}', '{{ addslashes($service['name']) }}')"
+                                                title="Dienststatus teilen"
+                                            >
+                                                @include('partials.status.icon', ['name' => 'share', 'class' => 'h-4 w-4'])
+                                            </button>
                                         </div>
 
                                         <div class="mt-2 flex flex-wrap items-center gap-2">
@@ -117,7 +127,7 @@
 
                                     <div
                                         @class([
-                                            'group relative h-7 flex-1 min-w-[4px] rounded-sm',
+                                            'status-history-segment group relative h-7 flex-1 min-w-[4px] rounded-sm',
                                             $dayStatus?->segmentClasses() ?? 'bg-slate-200/80',
                                         ])
                                     >

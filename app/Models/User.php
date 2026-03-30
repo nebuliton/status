@@ -15,7 +15,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
-#[Fillable(['name', 'email', 'password', 'current_team_id', 'email_verified_at'])]
+#[Fillable(['name', 'email', 'password', 'current_team_id', 'email_verified_at', 'is_admin'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
@@ -31,6 +31,7 @@ class User extends Authenticatable implements FilamentUser
     {
         return [
             'email_verified_at' => 'datetime',
+            'is_admin' => 'boolean',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];
@@ -50,6 +51,6 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return filled($this->email_verified_at);
+        return filled($this->email_verified_at) && $this->is_admin;
     }
 }

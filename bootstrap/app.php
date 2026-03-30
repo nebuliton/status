@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('status:check-services')->everyMinute()->withoutOverlapping();
+        $schedule->command('status:discord-snapshot --auto')->everyFiveMinutes()->withoutOverlapping();
         $schedule->command('app:update --auto')->everyFifteenMinutes()->withoutOverlapping();
     })
     ->withExceptions(function (Exceptions $exceptions): void {

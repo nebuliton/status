@@ -8,6 +8,7 @@ use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -64,6 +65,11 @@ class UserResource extends Resource
                     ->seconds(false)
                     ->default(now())
                     ->helperText('Nur bestätigte Benutzer können das Adminpanel öffnen.'),
+                Toggle::make('is_admin')
+                    ->label('Adminzugang erlauben')
+                    ->default(true)
+                    ->inline(false)
+                    ->helperText('Nur aktivierte Admin-Benutzer können sich im Adminpanel anmelden und andere Administratoren anlegen.'),
             ]);
     }
 
@@ -92,6 +98,11 @@ class UserResource extends Resource
                     ->since()
                     ->placeholder('Nicht bestätigt')
                     ->sortable(),
+                TextColumn::make('is_admin')
+                    ->label('Admin')
+                    ->badge()
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Ja' : 'Nein')
+                    ->color(fn (bool $state): string => $state ? 'success' : 'gray'),
                 TextColumn::make('created_at')
                     ->label('Erstellt')
                     ->dateTime()

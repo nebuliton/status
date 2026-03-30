@@ -35,6 +35,10 @@ return [
         ],
     ],
 
+    'discord' => [
+        'status_webhook_url' => env('DISCORD_STATUS_WEBHOOK_URL'),
+    ],
+
     'nebuliton' => [
         'logo_url' => env('NEBULITON_LOGO_URL', 'https://nebuliton.io/logo.png'),
         'shop_url' => env('NEBULITON_SHOP_URL', 'https://cp.nebuliton.io'),

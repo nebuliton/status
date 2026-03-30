@@ -201,27 +201,21 @@ new class extends Component {
                     </div>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-4">
-                    <a href="{{ $githubUrl }}" target="_blank" rel="noreferrer" class="status-footer-box status-footer-box-link">
-                        <span class="status-footer-box-icon">
+                <div class="flex flex-wrap items-center gap-3">
+                    <a href="{{ $githubUrl }}" target="_blank" rel="noreferrer" class="status-footer-meta status-footer-meta-link">
+                        <span class="status-footer-meta-icon">
                             @include('partials.status.icon', ['name' => 'github', 'class' => 'h-4 w-4', 'strokeWidth' => 0])
                         </span>
-                        <span>
-                            <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Repository</span>
-                            <span class="block text-sm font-medium text-slate-700">GitHub</span>
-                        </span>
+                        <span class="text-sm font-medium text-slate-600">GitHub</span>
                     </a>
 
-                    <span class="status-footer-box">
-                        <span class="status-footer-box-icon bg-brand-50 text-brand-600">
+                    <span class="status-footer-meta">
+                        <span class="status-footer-meta-icon text-brand-600">
                             @include('partials.status.icon', ['name' => 'sparkles', 'class' => 'h-4 w-4'])
                         </span>
-                        <span>
-                            <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Version</span>
-                            <span class="block text-sm font-medium text-slate-700">
-                                {{ $release['version'] }}
-                                <span class="text-slate-400">· {{ $release['branch'] }}</span>
-                            </span>
+                        <span class="text-sm font-medium text-slate-600">
+                            v{{ $release['version'] }}
+                            <span class="text-slate-400">· {{ $release['branch'] }}</span>
                         </span>
                     </span>
 
@@ -243,4 +237,39 @@ new class extends Component {
             </div>
         </footer>
     </div>
+
+    <div id="status-share-toast" class="status-share-toast hidden">Link kopiert</div>
 </div>
+
+<script>
+    window.nebulitonShareLink = async function (url, title) {
+        try {
+            if (navigator.share) {
+                await navigator.share({ title, url });
+            } else if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(url);
+            } else {
+                const input = document.createElement('input');
+                input.value = url;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                input.remove();
+            }
+
+            const toast = document.getElementById('status-share-toast');
+            if (toast) {
+                toast.textContent = 'Link kopiert';
+                toast.classList.remove('hidden');
+                toast.classList.add('status-share-toast-visible');
+                window.clearTimeout(window.__nebulitonShareToastTimer);
+                window.__nebulitonShareToastTimer = window.setTimeout(() => {
+                    toast.classList.remove('status-share-toast-visible');
+                    toast.classList.add('hidden');
+                }, 1800);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+</script>

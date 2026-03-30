@@ -56,11 +56,14 @@ it('renders the public status page with grouped services', function () {
         ->assertSee('Nebuliton')
         ->assertSee('Infrastruktur')
         ->assertSee('Edge-Netzwerk')
+        ->assertSee('1 aktive Vorfälle')
+        ->call('setTab', 'incidents')
         ->assertSee('Speicherlatenz');
 });
 
 it('stores subscribers from the subscribe action', function () {
     Volt::test('status-page')
+        ->call('setTab', 'subscribe')
         ->set('subscriberEmail', 'ops@example.com')
         ->call('subscribe')
         ->assertSet('subscriberEmail', '')

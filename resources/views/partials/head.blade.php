@@ -5,9 +5,10 @@
     {{ filled($title ?? null) ? $title.' - '.config('app.name', 'Laravel') : config('app.name', 'Laravel') }}
 </title>
 
-<link rel="icon" href="/favicon.ico" sizes="any">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+@php($faviconUrl = config('services.nebuliton.logo_url'))
+<link rel="icon" href="{{ $faviconUrl }}" type="image/png">
+<link rel="shortcut icon" href="{{ $faviconUrl }}" type="image/png">
+<link rel="apple-touch-icon" href="{{ $faviconUrl }}">
 
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=manrope:400,500,600,700,800|space-grotesk:500,600,700" rel="stylesheet" />

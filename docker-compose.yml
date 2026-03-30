@@ -12,7 +12,7 @@ services:
     volumes:
       - app_storage:/var/www/html/storage
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/up >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz | grep -q ok || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 5
@@ -41,7 +41,7 @@ services:
     volumes:
       - app_storage:/var/www/html/storage
     healthcheck:
-      test: ["CMD-SHELL", "php-fpm -t >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "SCRIPT_NAME=/fpm-ping SCRIPT_FILENAME=/fpm-ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 | grep -q pong || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 5

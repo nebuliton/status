@@ -1,0 +1,90 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web
+    restart: unless-stopped
+    depends_on:
+      - app
+    expose:
+      - "80"
+    volumes:
+      - app_storage:/var/www/html/storage
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/up >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_RUNTIME_ROLE: app
+      APP_RUN_STORAGE_LINK: "true"
+      APP_RUN_PACKAGE_DISCOVER: "true"
+      APP_RUN_OPTIMIZE: ${APP_RUN_OPTIMIZE:-true}
+      APP_RUN_MIGRATIONS: ${APP_RUN_MIGRATIONS:-false}
+    expose:
+      - "9000"
+    volumes:
+      - app_storage:/var/www/html/storage
+    healthcheck:
+      test: ["CMD-SHELL", "php-fpm -t >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    restart: unless-stopped
+    depends_on:
+      - app
+    env_file:
+      - .env
+    environment:
+      APP_RUNTIME_ROLE: queue
+      APP_RUN_STORAGE_LINK: "false"
+      APP_RUN_PACKAGE_DISCOVER: "false"
+      APP_RUN_OPTIMIZE: "false"
+      APP_RUN_MIGRATIONS: "false"
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=1", "--timeout=90"]
+    volumes:
+      - app_storage:/var/www/html/storage
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    restart: unless-stopped
+    depends_on:
+      - app
+    env_file:
+      - .env
+    environment:
+      APP_RUNTIME_ROLE: scheduler
+      APP_RUN_STORAGE_LINK: "false"
+      APP_RUN_PACKAGE_DISCOVER: "false"
+      APP_RUN_OPTIMIZE: "false"
+      APP_RUN_MIGRATIONS: "false"
+    command:
+      - sh
+      - -lc
+      - while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done
+    volumes:
+      - app_storage:/var/www/html/storage
+
+volumes:
+  app_storage:

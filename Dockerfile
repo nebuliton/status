@@ -63,6 +63,7 @@ RUN apk add --no-cache \
         bash \
         curl \
         fcgi \
+        git \
         icu-data-full \
         icu-libs \
         libpng \

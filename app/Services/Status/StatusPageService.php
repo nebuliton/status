@@ -11,6 +11,7 @@ use App\Models\Maintenance;
 use App\Models\Service;
 use App\Models\ServiceGroup;
 use App\Models\UptimeLog;
+use Carbon\CarbonInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -33,10 +34,29 @@ class StatusPageService
         $services = $groups->pluck('services')->flatten()->values();
         $historyLogs = $this->dailyHistoryLogs($services, $windowStart);
         $globalStatus = $this->resolveGlobalStatus($services);
+        $activeIncidents = $this->incidentCollection(false);
+        $resolvedIncidents = $this->incidentCollection(true);
+        $upcomingMaintenances = $this->maintenanceCollection(false);
+        $completedMaintenances = $this->maintenanceCollection(true);
+        $announcements = Announcement::query()
+            ->published()
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('published_at')
+            ->get();
+        $lastUpdatedAt = $this->resolveLastUpdatedAt(
+            $services,
+            $activeIncidents,
+            $resolvedIncidents,
+            $upcomingMaintenances,
+            $completedMaintenances,
+            $announcements,
+        );
 
         return [
             'days' => $days,
             'generatedAt' => now(),
+            'lastUpdatedAt' => $lastUpdatedAt,
+            'lastUpdatedLabel' => $this->lastUpdatedLabel($lastUpdatedAt),
             'globalStatus' => $globalStatus,
             'globalMessage' => $this->globalMessage($globalStatus, $services),
             'statusBreakdown' => $this->statusBreakdown($services),
@@ -69,19 +89,49 @@ class StatusPageService
                 ],
             ),
             'incidents' => [
-                'active' => $this->incidentCollection(false),
-                'resolved' => $this->incidentCollection(true),
+                'active' => $activeIncidents,
+                'resolved' => $resolvedIncidents,
             ],
             'maintenances' => [
-                'upcoming' => $this->maintenanceCollection(false),
-                'completed' => $this->maintenanceCollection(true),
+                'upcoming' => $upcomingMaintenances,
+                'completed' => $completedMaintenances,
             ],
-            'announcements' => Announcement::query()
-                ->published()
-                ->orderByDesc('is_pinned')
-                ->orderByDesc('published_at')
-                ->get(),
+            'announcements' => $announcements,
         ];
+    }
+
+    protected function resolveLastUpdatedAt(
+        Collection $services,
+        Collection $activeIncidents,
+        Collection $resolvedIncidents,
+        Collection $upcomingMaintenances,
+        Collection $completedMaintenances,
+        Collection $announcements,
+    ): ?CarbonImmutable {
+        return collect()
+            ->merge($services->pluck('last_checked_at'))
+            ->merge($activeIncidents->pluck('updated_at'))
+            ->merge($resolvedIncidents->pluck('updated_at'))
+            ->merge($upcomingMaintenances->pluck('updated_at'))
+            ->merge($completedMaintenances->pluck('updated_at'))
+            ->merge($announcements->pluck('updated_at'))
+            ->filter(fn ($timestamp): bool => $timestamp instanceof CarbonInterface)
+            ->map(fn (CarbonInterface $timestamp): CarbonImmutable => CarbonImmutable::instance($timestamp))
+            ->sortDesc()
+            ->first();
+    }
+
+    protected function lastUpdatedLabel(?CarbonImmutable $lastUpdatedAt): string
+    {
+        if (! $lastUpdatedAt) {
+            return 'Noch keine Aktualisierung';
+        }
+
+        if ($lastUpdatedAt->diffInSeconds(now()) < 10) {
+            return 'gerade eben';
+        }
+
+        return $lastUpdatedAt->diffForHumans();
     }
 
     protected function resolveGlobalStatus(Collection $services): ServiceStatus

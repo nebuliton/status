@@ -117,6 +117,18 @@
     .status-footer-link {
         @apply inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-950;
     }
+
+    .status-footer-box {
+        @apply inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm;
+    }
+
+    .status-footer-box-link {
+        @apply transition hover:border-slate-300 hover:bg-slate-50;
+    }
+
+    .status-footer-box-icon {
+        @apply flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700;
+    }
 }
 
 @layer utilities {

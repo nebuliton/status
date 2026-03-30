@@ -34,6 +34,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 'Zugänge & Teams',
+                'System',
                 'Statuskonfiguration',
                 'Betrieb',
                 'Kommunikation',

@@ -3,6 +3,7 @@
 use App\Models\Subscriber;
 use App\Services\Status\ServiceCheckRunner;
 use App\Services\Status\StatusPageService;
+use App\Services\VersionManifestService;
 use Livewire\Volt\Component;
 
 new class extends Component {
@@ -70,6 +71,11 @@ new class extends Component {
         return app(StatusPageService::class)->snapshot();
     }
 
+    public function getReleaseProperty(): array
+    {
+        return app(VersionManifestService::class)->safeReadLocal();
+    }
+
     public function getTabsProperty(): array
     {
         return [
@@ -90,7 +96,9 @@ new class extends Component {
 @php($announcements = $snapshot['announcements'])
 @php($upcomingMaintenances = $snapshot['maintenances']['upcoming'])
 @php($completedMaintenances = $snapshot['maintenances']['completed'])
+@php($release = $this->release)
 @php($logoUrl = config('services.nebuliton.logo_url'))
+@php($githubUrl = config('services.nebuliton.github_url'))
 
 <div wire:poll.30s.visible="refreshSnapshot" class="status-shell min-h-screen text-slate-900">
     <div class="status-mesh"></div>
@@ -117,7 +125,7 @@ new class extends Component {
 
                     <span class="status-inline-meta">
                         @include('partials.status.icon', ['name' => 'clock', 'class' => 'h-4 w-4'])
-                        Aktualisiert {{ $snapshot['generatedAt']->diffForHumans() }}
+                        Aktualisiert {{ $snapshot['lastUpdatedLabel'] }}
                     </span>
 
                     <a href="{{ config('services.nebuliton.shop_url') }}" class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-950">
@@ -194,6 +202,29 @@ new class extends Component {
                 </div>
 
                 <div class="flex flex-wrap items-center gap-4">
+                    <a href="{{ $githubUrl }}" target="_blank" rel="noreferrer" class="status-footer-box status-footer-box-link">
+                        <span class="status-footer-box-icon">
+                            @include('partials.status.icon', ['name' => 'github', 'class' => 'h-4 w-4', 'strokeWidth' => 0])
+                        </span>
+                        <span>
+                            <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Repository</span>
+                            <span class="block text-sm font-medium text-slate-700">GitHub</span>
+                        </span>
+                    </a>
+
+                    <span class="status-footer-box">
+                        <span class="status-footer-box-icon bg-brand-50 text-brand-600">
+                            @include('partials.status.icon', ['name' => 'sparkles', 'class' => 'h-4 w-4'])
+                        </span>
+                        <span>
+                            <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Version</span>
+                            <span class="block text-sm font-medium text-slate-700">
+                                {{ $release['version'] }}
+                                <span class="text-slate-400">· {{ $release['branch'] }}</span>
+                            </span>
+                        </span>
+                    </span>
+
                     <a href="{{ config('services.nebuliton.shop_url') }}" class="status-footer-link">
                         Shop
                         @include('partials.status.icon', ['name' => 'arrow-up-right', 'class' => 'h-4 w-4'])
@@ -204,7 +235,10 @@ new class extends Component {
                             @include('partials.status.icon', ['name' => 'arrow-up-right', 'class' => 'h-4 w-4'])
                         </a>
                     @endauth
-                    <span class="text-sm text-slate-400">Letzter Snapshot {{ $snapshot['generatedAt']->translatedFormat('d. M Y · H:i') }}</span>
+                    <span class="text-sm text-slate-400">
+                        Letzte Aktualisierung
+                        {{ $snapshot['lastUpdatedAt']?->translatedFormat('d. M Y · H:i') ?? 'noch keine Daten' }}
+                    </span>
                 </div>
             </div>
         </footer>

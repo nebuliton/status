@@ -39,6 +39,7 @@ return [
         'logo_url' => env('NEBULITON_LOGO_URL', 'https://nebuliton.io/logo.png'),
         'shop_url' => env('NEBULITON_SHOP_URL', 'https://cp.nebuliton.io'),
         'control_panel_url' => env('NEBULITON_CONTROL_PANEL_URL', '/admin'),
+        'github_url' => env('NEBULITON_GITHUB_URL', 'https://github.com/nebuliton/status'),
     ],
 
 ];

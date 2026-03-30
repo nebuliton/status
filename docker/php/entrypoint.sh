@@ -14,9 +14,12 @@ mkdir -p \
     storage/logs \
     bootstrap/cache
 
+touch storage/logs/laravel.log
+
 rm -rf public/storage
 ln -s /var/www/html/storage/app/public public/storage
 
+chown -R www-data:www-data storage bootstrap/cache || true
 chmod -R ug+rwX storage bootstrap/cache || true
 
 if [ "${APP_RUN_PACKAGE_DISCOVER:-true}" = "true" ]; then

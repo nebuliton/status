@@ -95,6 +95,7 @@ RUN apk add --no-cache \
     && apk del .build-deps
 
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/99-nebuliton.ini
+COPY docker/php/zz-nebuliton-fpm.conf /usr/local/etc/php-fpm.d/zz-nebuliton.conf
 COPY docker/php/entrypoint.sh /usr/local/bin/nebuliton-entrypoint
 RUN chmod +x /usr/local/bin/nebuliton-entrypoint
 

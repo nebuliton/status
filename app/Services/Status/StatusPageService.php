@@ -15,104 +15,31 @@ use Carbon\CarbonInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class StatusPageService
 {
     public function snapshot(int $days = 90): array
     {
-        $windowStart = now()->subDays($days - 1)->startOfDay();
-
-        $groups = ServiceGroup::query()
-            ->with([
-                'services' => fn ($query) => $query
-                    ->orderBy('name'),
-            ])
-            ->orderBy('order')
-            ->orderBy('name')
-            ->get();
-
-        $services = $groups->pluck('services')->flatten()->values();
-        $historyLogs = $this->dailyHistoryLogs($services, $windowStart);
-        $globalStatus = $this->resolveGlobalStatus($services);
-        $activeIncidents = $this->incidentCollection(false);
-        $resolvedIncidents = $this->incidentCollection(true);
-        $upcomingMaintenances = $this->maintenanceCollection(false);
-        $completedMaintenances = $this->maintenanceCollection(true);
-        $announcements = Announcement::query()
-            ->published()
-            ->orderByDesc('is_pinned')
-            ->orderByDesc('published_at')
-            ->get();
-        $lastUpdatedAt = $this->resolveLastUpdatedAt(
-            $services,
-            $activeIncidents,
-            $resolvedIncidents,
-            $upcomingMaintenances,
-            $completedMaintenances,
-            $announcements,
+        $snapshot = $this->rememberSnapshot(
+            "status-page:snapshot:{$days}",
+            fn (): array => $this->buildSnapshot($days),
         );
 
-        return [
-            'days' => $days,
-            'generatedAt' => now(),
-            'lastUpdatedAt' => $lastUpdatedAt,
-            'lastUpdatedLabel' => $this->lastUpdatedLabel($lastUpdatedAt),
-            'globalStatus' => $globalStatus,
-            'globalMessage' => $this->globalMessage($globalStatus, $services),
-            'statusBreakdown' => $this->statusBreakdown($services),
-            'averageUptime' => round($services->avg('uptime_percentage') ?? 100, 2),
-            'groups' => $groups->map(
-                fn (ServiceGroup $group) => [
-                    'id' => $group->id,
-                    'name' => $group->name,
-                    'services' => $group->services->map(
-                        fn (Service $service) => $this->servicePayload(
-                            $service,
-                            $historyLogs->get($service->id, collect()),
-                            $windowStart,
-                            $days,
-                        ),
-                    ),
-                ],
-            ),
-            'incidents' => [
-                'active' => $activeIncidents,
-                'resolved' => $resolvedIncidents,
-            ],
-            'maintenances' => [
-                'upcoming' => $upcomingMaintenances,
-                'completed' => $completedMaintenances,
-            ],
-            'announcements' => $announcements,
-        ];
+        return $this->withRelativeMeta($snapshot);
     }
 
     public function serviceSnapshot(Service $service, int $days = 90): array
     {
         $service->loadMissing('group');
 
-        $windowStart = now()->subDays($days - 1)->startOfDay();
-        $historyLogs = $this->dailyHistoryLogs(collect([$service]), $windowStart)->get($service->id, collect());
-        $payload = $this->servicePayload($service, $historyLogs, $windowStart, $days);
-        $lastUpdatedAt = $service->last_checked_at instanceof CarbonInterface
-            ? CarbonImmutable::instance($service->last_checked_at)
-            : null;
+        $snapshot = $this->rememberSnapshot(
+            "status-page:service:{$service->getKey()}:{$days}",
+            fn (): array => $this->buildServiceSnapshot($service, $days),
+        );
 
-        return [
-            'days' => $days,
-            'generatedAt' => now(),
-            'lastUpdatedAt' => $lastUpdatedAt,
-            'lastUpdatedLabel' => $this->lastUpdatedLabel($lastUpdatedAt),
-            'service' => $payload,
-            'description' => $this->serviceShareDescription($payload),
-            'shareHash' => sha1(json_encode([
-                'status' => $service->status->value,
-                'uptime' => $payload['uptime_percentage'],
-                'last_checked_at' => $service->last_checked_at?->toIso8601String(),
-                'last_check_message' => $service->last_check_message,
-            ])),
-        ];
+        return $this->withRelativeMeta($snapshot);
     }
 
     public function overviewShareSnapshot(int $days = 90, int $limit = 8): array
@@ -145,6 +72,143 @@ class StatusPageService
                 ])->all(),
             ])),
         ];
+    }
+
+    protected function buildSnapshot(int $days): array
+    {
+        $windowStart = now()->subDays($days - 1)->startOfDay();
+
+        $groups = ServiceGroup::query()
+            ->select(['id', 'name', 'order'])
+            ->with([
+                'services' => fn ($query) => $query
+                    ->select([
+                        'id',
+                        'name',
+                        'slug',
+                        'status',
+                        'uptime_percentage',
+                        'group_id',
+                        'check_type',
+                        'icon_source',
+                        'icon_name',
+                        'icon_path',
+                        'check_enabled',
+                        'target_url',
+                        'target_host',
+                        'target_port',
+                        'database_driver',
+                        'database_host',
+                        'database_name',
+                        'last_checked_at',
+                        'last_response_time_ms',
+                        'last_check_message',
+                    ])
+                    ->orderBy('name'),
+            ])
+            ->orderBy('order')
+            ->orderBy('name')
+            ->get();
+
+        $services = $groups->pluck('services')->flatten()->values();
+        $historyLogs = $this->dailyHistoryLogs($services, $windowStart);
+        $globalStatus = $this->resolveGlobalStatus($services);
+        $activeIncidents = $this->incidentCollection(false);
+        $resolvedIncidents = $this->incidentCollection(true);
+        $upcomingMaintenances = $this->maintenanceCollection(false);
+        $completedMaintenances = $this->maintenanceCollection(true);
+        $announcements = Announcement::query()
+            ->published()
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('published_at')
+            ->get();
+        $lastUpdatedAt = $this->resolveLastUpdatedAt(
+            $services,
+            $activeIncidents,
+            $resolvedIncidents,
+            $upcomingMaintenances,
+            $completedMaintenances,
+            $announcements,
+        );
+
+        return [
+            'days' => $days,
+            'lastUpdatedAt' => $lastUpdatedAt,
+            'globalStatus' => $globalStatus,
+            'globalMessage' => $this->globalMessage($globalStatus, $services),
+            'statusBreakdown' => $this->statusBreakdown($services),
+            'averageUptime' => round($services->avg('uptime_percentage') ?? 100, 2),
+            'groups' => $groups->map(
+                fn (ServiceGroup $group) => [
+                    'id' => $group->id,
+                    'name' => $group->name,
+                    'services' => $group->services->map(
+                        fn (Service $service) => $this->servicePayload(
+                            $service,
+                            $historyLogs->get($service->id, collect()),
+                            $windowStart,
+                            $days,
+                        ),
+                    ),
+                ],
+            ),
+            'incidents' => [
+                'active' => $activeIncidents,
+                'resolved' => $resolvedIncidents,
+            ],
+            'maintenances' => [
+                'upcoming' => $upcomingMaintenances,
+                'completed' => $completedMaintenances,
+            ],
+            'announcements' => $announcements,
+        ];
+    }
+
+    protected function buildServiceSnapshot(Service $service, int $days): array
+    {
+        $windowStart = now()->subDays($days - 1)->startOfDay();
+        $historyLogs = $this->dailyHistoryLogs(collect([$service]), $windowStart)->get($service->id, collect());
+        $payload = $this->servicePayload($service, $historyLogs, $windowStart, $days);
+        $lastUpdatedAt = $service->last_checked_at instanceof CarbonInterface
+            ? CarbonImmutable::instance($service->last_checked_at)
+            : null;
+
+        return [
+            'days' => $days,
+            'lastUpdatedAt' => $lastUpdatedAt,
+            'service' => $payload,
+            'description' => $this->serviceShareDescription($payload),
+            'shareHash' => sha1(json_encode([
+                'status' => $service->status->value,
+                'uptime' => $payload['uptime_percentage'],
+                'last_checked_at' => $service->last_checked_at?->toIso8601String(),
+                'last_check_message' => $service->last_check_message,
+            ])),
+        ];
+    }
+
+    protected function withRelativeMeta(array $snapshot): array
+    {
+        $snapshot['generatedAt'] = now();
+        $snapshot['lastUpdatedLabel'] = $this->lastUpdatedLabel($snapshot['lastUpdatedAt'] ?? null);
+
+        return $snapshot;
+    }
+
+    protected function rememberSnapshot(string $key, callable $resolver): array
+    {
+        $ttl = (int) config('services.nebuliton.status_snapshot_cache_seconds', 15);
+        $store = (string) config('services.nebuliton.status_snapshot_cache_store', 'file');
+
+        if (app()->isLocal() || app()->runningUnitTests() || ($ttl < 1)) {
+            return $resolver();
+        }
+
+        try {
+            return Cache::store($store)->remember($key, now()->addSeconds($ttl), $resolver);
+        } catch (\Throwable) {
+            return Cache::remember($key, now()->addSeconds($ttl), $resolver);
+        }
     }
 
     protected function resolveLastUpdatedAt(

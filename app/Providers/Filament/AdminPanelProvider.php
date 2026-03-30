@@ -28,6 +28,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('Nebuliton Status')
             ->brandLogo(config('services.nebuliton.logo_url'))
             ->brandLogoHeight('2rem')
+            ->favicon(config('services.nebuliton.logo_url'))
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->login()
             ->colors([

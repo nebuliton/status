@@ -44,6 +44,8 @@ return [
         'shop_url' => env('NEBULITON_SHOP_URL', 'https://cp.nebuliton.io'),
         'control_panel_url' => env('NEBULITON_CONTROL_PANEL_URL', '/admin'),
         'github_url' => env('NEBULITON_GITHUB_URL', 'https://github.com/nebuliton/status'),
+        'status_snapshot_cache_seconds' => (int) env('STATUS_SNAPSHOT_CACHE_SECONDS', 15),
+        'status_snapshot_cache_store' => env('STATUS_SNAPSHOT_CACHE_STORE', 'file'),
     ],
 
 ];

@@ -100,7 +100,7 @@ new class extends Component {
 @php($logoUrl = config('services.nebuliton.logo_url'))
 @php($githubUrl = config('services.nebuliton.github_url'))
 
-<div wire:poll.30s.visible="refreshSnapshot" class="status-shell min-h-screen text-slate-900">
+<div wire:poll.45s.visible="refreshSnapshot" class="status-shell min-h-screen text-slate-900">
     <div class="status-mesh"></div>
 
     <div class="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
@@ -221,6 +221,10 @@ new class extends Component {
 
                     <a href="{{ config('services.nebuliton.shop_url') }}" class="status-footer-link">
                         Shop
+                        @include('partials.status.icon', ['name' => 'arrow-up-right', 'class' => 'h-4 w-4'])
+                    </a>
+                    <a href="{{ route('impressum') }}" class="status-footer-link">
+                        Impressum
                         @include('partials.status.icon', ['name' => 'arrow-up-right', 'class' => 'h-4 w-4'])
                     </a>
                     @auth

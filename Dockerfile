@@ -1,7 +1,31 @@
 # syntax=docker/dockerfile:1.7
 
-FROM composer:2 AS composer_vendor
+FROM composer:2 AS composer_bin
+
+FROM php:8.3-cli-alpine AS composer_vendor
 WORKDIR /app
+
+COPY --from=composer_bin /usr/bin/composer /usr/bin/composer
+
+RUN apk add --no-cache \
+        git \
+        icu-data-full \
+        icu-libs \
+        libzip \
+        oniguruma \
+        unzip \
+    && apk add --no-cache --virtual .build-deps \
+        $PHPIZE_DEPS \
+        icu-dev \
+        libzip-dev \
+        oniguruma-dev \
+    && docker-php-ext-install -j"$(nproc)" \
+        intl \
+        mbstring \
+        zip \
+    && apk del .build-deps
+
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 COPY composer.json composer.lock ./
 RUN composer install \
